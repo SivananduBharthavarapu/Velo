@@ -1,7 +1,9 @@
 package com.siva.velo.user.service;
 
+import com.siva.velo.common.mapper.UserMapper;
 import com.siva.velo.exception.InvalidCredentialsException;
 import com.siva.velo.exception.UserAlreadyExistsException;
+import com.siva.velo.exception.UserNotFoundException;
 import com.siva.velo.security.JwtService;
 import com.siva.velo.user.dto.LoginRequest;
 import com.siva.velo.user.dto.LoginResponse;
@@ -9,44 +11,31 @@ import com.siva.velo.user.dto.RegisterUserRequest;
 import com.siva.velo.user.dto.UserResponse;
 import com.siva.velo.user.entity.User;
 import com.siva.velo.user.repository.UserRepository;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.security.core.Authentication;
 
 @Service
 public class UserService {
+
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final JwtService jwtService;
+    private final UserMapper userMapper;
 
     public UserService(UserRepository userRepository,
                        PasswordEncoder passwordEncoder,
-                       JwtService jwtService) {
+                       JwtService jwtService,
+                       UserMapper userMapper) {
 
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtService = jwtService;
-    }
-    private UserResponse mapToUserResponse(User user) {
-
-        UserResponse response = new UserResponse();
-
-        response.setId(user.getId());
-        response.setFirstName(user.getFirstName());
-        response.setLastName(user.getLastName());
-        response.setUsername(user.getUsername());
-        response.setEmail(user.getEmail());
-        response.setBio(user.getBio());
-        response.setProfileImage(user.getProfileImage());
-        response.setStatus(user.getStatus());
-        response.setIsOnline(user.getIsOnline());
-        response.setLastSeen(user.getLastSeen());
-        response.setCreatedAt(user.getCreatedAt());
-
-        return response;
+        this.userMapper = userMapper;
     }
 
     public UserResponse registerUser(RegisterUserRequest request) {
+
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new UserAlreadyExistsException("Email already exists");
         }
@@ -65,30 +54,9 @@ public class UserService {
 
         User savedUser = userRepository.save(user);
 
-        UserResponse response = new UserResponse();
-
-        response.setId(savedUser.getId());
-        response.setFirstName(savedUser.getFirstName());
-        response.setLastName(savedUser.getLastName());
-        response.setUsername(savedUser.getUsername());
-        response.setEmail(savedUser.getEmail());
-        response.setBio(savedUser.getBio());
-        response.setProfileImage(savedUser.getProfileImage());
-        response.setStatus(savedUser.getStatus());
-        response.setIsOnline(savedUser.getIsOnline());
-        response.setLastSeen(savedUser.getLastSeen());
-        response.setCreatedAt(savedUser.getCreatedAt());
-
-        return response;
+        return userMapper.toUserResponse(savedUser);
     }
-    public UserResponse getCurrentUser(Authentication authentication) {
 
-        User user = userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() ->
-                        new RuntimeException("User not found"));
-
-        return mapToUserResponse(user);
-    }
     public LoginResponse loginUser(LoginRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail())
@@ -98,10 +66,21 @@ public class UserService {
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new InvalidCredentialsException("Invalid email or password");
         }
+
         String token = jwtService.generateToken(user.getEmail());
 
-        UserResponse userResponse = mapToUserResponse(user);
+        return new LoginResponse(
+                token,
+                userMapper.toUserResponse(user)
+        );
+    }
 
-        return new LoginResponse(token, userResponse);
+    public UserResponse getCurrentUser(Authentication authentication) {
+
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() ->
+                        new UserNotFoundException("User not found"));
+
+        return userMapper.toUserResponse(user);
     }
 }

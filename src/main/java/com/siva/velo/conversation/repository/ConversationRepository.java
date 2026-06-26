@@ -4,6 +4,7 @@ import com.siva.velo.conversation.entity.Conversation;
 import com.siva.velo.user.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface ConversationRepository extends JpaRepository<Conversation, Long> {
@@ -15,5 +16,9 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
             User userTwo,
             User userTwoAgain,
             User userOneAgain
+    );
+    List<Conversation> findByUserOneOrUserTwo(
+            User userOne,
+            User userTwo
     );
 }

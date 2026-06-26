@@ -65,4 +65,8 @@ public class Conversation {
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }
+    public boolean hasParticipant(User user) {
+        return userOne.getId().equals(user.getId())
+                || userTwo.getId().equals(user.getId());
+    }
 }
