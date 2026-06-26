@@ -1,6 +1,8 @@
 package com.siva.velo.user.service;
 
+import com.siva.velo.exception.InvalidCredentialsException;
 import com.siva.velo.exception.UserAlreadyExistsException;
+import com.siva.velo.user.dto.LoginRequest;
 import com.siva.velo.user.dto.RegisterUserRequest;
 import com.siva.velo.user.dto.UserResponse;
 import com.siva.velo.user.entity.User;
@@ -17,6 +19,24 @@ public class UserService {
                        PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+    }
+    private UserResponse mapToUserResponse(User user) {
+
+        UserResponse response = new UserResponse();
+
+        response.setId(user.getId());
+        response.setFirstName(user.getFirstName());
+        response.setLastName(user.getLastName());
+        response.setUsername(user.getUsername());
+        response.setEmail(user.getEmail());
+        response.setBio(user.getBio());
+        response.setProfileImage(user.getProfileImage());
+        response.setStatus(user.getStatus());
+        response.setIsOnline(user.getIsOnline());
+        response.setLastSeen(user.getLastSeen());
+        response.setCreatedAt(user.getCreatedAt());
+
+        return response;
     }
 
     public UserResponse registerUser(RegisterUserRequest request) {
@@ -53,5 +73,17 @@ public class UserService {
         response.setCreatedAt(savedUser.getCreatedAt());
 
         return response;
+    }
+    public UserResponse loginUser(LoginRequest request) {
+
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() ->
+                        new InvalidCredentialsException("Invalid email or password"));
+
+        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+            throw new InvalidCredentialsException("Invalid email or password");
+        }
+
+        return mapToUserResponse(user);
     }
 }
