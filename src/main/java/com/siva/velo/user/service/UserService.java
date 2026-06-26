@@ -1,5 +1,6 @@
 package com.siva.velo.user.service;
 
+import com.siva.velo.exception.UserAlreadyExistsException;
 import com.siva.velo.user.dto.RegisterUserRequest;
 import com.siva.velo.user.dto.UserResponse;
 import com.siva.velo.user.entity.User;
@@ -16,6 +17,13 @@ public class UserService {
     }
 
     public UserResponse registerUser(RegisterUserRequest request) {
+        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
+            throw new UserAlreadyExistsException("Email already exists");
+        }
+
+        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+            throw new UserAlreadyExistsException("Username already exists");
+        }
 
         User user = new User();
 
