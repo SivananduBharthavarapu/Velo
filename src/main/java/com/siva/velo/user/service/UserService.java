@@ -11,6 +11,7 @@ import com.siva.velo.user.entity.User;
 import com.siva.velo.user.repository.UserRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.security.core.Authentication;
 
 @Service
 public class UserService {
@@ -79,6 +80,14 @@ public class UserService {
         response.setCreatedAt(savedUser.getCreatedAt());
 
         return response;
+    }
+    public UserResponse getCurrentUser(Authentication authentication) {
+
+        User user = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() ->
+                        new RuntimeException("User not found"));
+
+        return mapToUserResponse(user);
     }
     public LoginResponse loginUser(LoginRequest request) {
 

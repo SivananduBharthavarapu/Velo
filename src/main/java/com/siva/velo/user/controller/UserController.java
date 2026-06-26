@@ -7,10 +7,9 @@ import com.siva.velo.user.dto.RegisterUserRequest;
 import com.siva.velo.user.dto.UserResponse;
 import com.siva.velo.user.service.UserService;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 
 @RestController
 @RequestMapping("/api/users")
@@ -43,6 +42,17 @@ public class UserController {
         return new ApiResponse<>(
                 true,
                 "Login successful",
+                response
+        );
+    }
+    @GetMapping("/me")
+    public ApiResponse<UserResponse> getCurrentUser(Authentication authentication) {
+
+        UserResponse response = userService.getCurrentUser(authentication);
+
+        return new ApiResponse<>(
+                true,
+                "Current user fetched successfully",
                 response
         );
     }
