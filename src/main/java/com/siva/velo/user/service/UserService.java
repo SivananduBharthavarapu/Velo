@@ -5,15 +5,18 @@ import com.siva.velo.user.dto.RegisterUserRequest;
 import com.siva.velo.user.dto.UserResponse;
 import com.siva.velo.user.entity.User;
 import com.siva.velo.user.repository.UserRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
 public class UserService {
-
+    private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
 
-    public UserService(UserRepository userRepository) {
+    public UserService(UserRepository userRepository,
+                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public UserResponse registerUser(RegisterUserRequest request) {
@@ -31,7 +34,7 @@ public class UserService {
         user.setLastName(request.getLastName());
         user.setUsername(request.getUsername());
         user.setEmail(request.getEmail());
-        user.setPassword(request.getPassword());
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
 
         User savedUser = userRepository.save(user);
 
