@@ -2,6 +2,7 @@ package com.siva.velo.user.controller;
 
 import com.siva.velo.common.response.ApiResponse;
 import com.siva.velo.user.dto.LoginRequest;
+import com.siva.velo.user.dto.LoginResponse;
 import com.siva.velo.user.dto.RegisterUserRequest;
 import com.siva.velo.user.dto.UserResponse;
 import com.siva.velo.user.service.UserService;
@@ -34,10 +35,10 @@ public class UserController {
         );
     }
     @PostMapping("/login")
-    public ApiResponse<UserResponse> loginUser(
+    public ApiResponse<LoginResponse> loginUser(
             @Valid @RequestBody LoginRequest request) {
 
-        UserResponse response = userService.loginUser(request);
+        LoginResponse response = userService.loginUser(request);
 
         return new ApiResponse<>(
                 true,

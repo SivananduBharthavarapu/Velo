@@ -2,7 +2,9 @@ package com.siva.velo.user.service;
 
 import com.siva.velo.exception.InvalidCredentialsException;
 import com.siva.velo.exception.UserAlreadyExistsException;
+import com.siva.velo.security.JwtService;
 import com.siva.velo.user.dto.LoginRequest;
+import com.siva.velo.user.dto.LoginResponse;
 import com.siva.velo.user.dto.RegisterUserRequest;
 import com.siva.velo.user.dto.UserResponse;
 import com.siva.velo.user.entity.User;
@@ -14,11 +16,15 @@ import org.springframework.stereotype.Service;
 public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
+    private final JwtService jwtService;
 
     public UserService(UserRepository userRepository,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder,
+                       JwtService jwtService) {
+
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.jwtService = jwtService;
     }
     private UserResponse mapToUserResponse(User user) {
 
@@ -74,7 +80,7 @@ public class UserService {
 
         return response;
     }
-    public UserResponse loginUser(LoginRequest request) {
+    public LoginResponse loginUser(LoginRequest request) {
 
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() ->
@@ -83,7 +89,10 @@ public class UserService {
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
             throw new InvalidCredentialsException("Invalid email or password");
         }
+        String token = jwtService.generateToken(user.getEmail());
 
-        return mapToUserResponse(user);
+        UserResponse userResponse = mapToUserResponse(user);
+
+        return new LoginResponse(token, userResponse);
     }
 }
