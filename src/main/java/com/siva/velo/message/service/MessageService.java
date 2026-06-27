@@ -3,13 +3,16 @@ package com.siva.velo.message.service;
 import com.siva.velo.common.mapper.MessageMapper;
 import com.siva.velo.conversation.entity.Conversation;
 import com.siva.velo.conversation.repository.ConversationRepository;
+import com.siva.velo.exception.ConversationNotFoundException;
+import com.siva.velo.exception.MessageNotFoundException;
+import com.siva.velo.exception.UnauthorizedConversationException;
+import com.siva.velo.exception.UserNotFoundException;
 import com.siva.velo.message.dto.MessageResponse;
 import com.siva.velo.message.dto.SendMessageRequest;
 import com.siva.velo.message.entity.Message;
 import com.siva.velo.message.repository.MessageRepository;
 import com.siva.velo.user.entity.User;
 import com.siva.velo.user.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -34,45 +37,23 @@ public class MessageService {
         this.userRepository = userRepository;
         this.messageMapper = messageMapper;
     }
-    public List<MessageResponse> getConversationMessages(
-            Long conversationId,
-            Authentication authentication) {
 
-        User currentUser = userRepository.findByEmail(authentication.getName())
-                .orElseThrow(() ->
-                        new EntityNotFoundException("User not found"));
-
-        Conversation conversation = conversationRepository.findById(conversationId)
-                .orElseThrow(() ->
-                        new EntityNotFoundException("Conversation not found"));
-
-        if (!conversation.hasParticipant(currentUser)) {
-            throw new IllegalArgumentException(
-                    "You are not a participant in this conversation.");
-        }
-
-        return messageRepository
-                .findByConversationOrderByCreatedAtAsc(conversation)
-                .stream()
-                .map(messageMapper::toMessageResponse)
-                .toList();
-    }
     public MessageResponse sendMessage(
             SendMessageRequest request,
             Authentication authentication) {
 
         User sender = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() ->
-                        new EntityNotFoundException("Sender not found"));
+                        new UserNotFoundException("Sender not found"));
 
         Conversation conversation = conversationRepository
                 .findById(request.getConversationId())
                 .orElseThrow(() ->
-                        new EntityNotFoundException("Conversation not found"));
+                        new ConversationNotFoundException("Conversation not found"));
+
         if (!conversation.hasParticipant(sender)) {
-            throw new IllegalArgumentException(
-                    "You are not a participant in this conversation."
-            );
+            throw new UnauthorizedConversationException(
+                    "You are not a participant in this conversation.");
         }
 
         Message message = new Message();
@@ -85,24 +66,50 @@ public class MessageService {
 
         conversation.setUpdatedAt(savedMessage.getCreatedAt());
         conversationRepository.save(conversation);
+
         return messageMapper.toMessageResponse(savedMessage);
     }
+
+    public List<MessageResponse> getConversationMessages(
+            Long conversationId,
+            Authentication authentication) {
+
+        User currentUser = userRepository.findByEmail(authentication.getName())
+                .orElseThrow(() ->
+                        new UserNotFoundException("User not found"));
+
+        Conversation conversation = conversationRepository.findById(conversationId)
+                .orElseThrow(() ->
+                        new ConversationNotFoundException("Conversation not found"));
+
+        if (!conversation.hasParticipant(currentUser)) {
+            throw new UnauthorizedConversationException(
+                    "You are not a participant in this conversation.");
+        }
+
+        return messageRepository
+                .findByConversationOrderByCreatedAtAsc(conversation)
+                .stream()
+                .map(messageMapper::toMessageResponse)
+                .toList();
+    }
+
     public void markMessageAsRead(
             Long messageId,
             Authentication authentication) {
 
         User currentUser = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() ->
-                        new EntityNotFoundException("User not found"));
+                        new UserNotFoundException("User not found"));
 
         Message message = messageRepository.findById(messageId)
                 .orElseThrow(() ->
-                        new EntityNotFoundException("Message not found"));
+                        new MessageNotFoundException("Message not found"));
 
         Conversation conversation = message.getConversation();
 
         if (!conversation.hasParticipant(currentUser)) {
-            throw new IllegalArgumentException(
+            throw new UnauthorizedConversationException(
                     "You are not a participant in this conversation.");
         }
 
