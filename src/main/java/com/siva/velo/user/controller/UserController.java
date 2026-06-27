@@ -6,13 +6,18 @@ import com.siva.velo.user.dto.LoginResponse;
 import com.siva.velo.user.dto.RegisterUserRequest;
 import com.siva.velo.user.dto.UserResponse;
 import com.siva.velo.user.service.UserService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
-import org.springframework.web.bind.annotation.*;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/users")
+@Tag(
+        name = "User Management",
+        description = "APIs for user registration, authentication and profile"
+)
 public class UserController {
 
     private final UserService userService;
@@ -21,6 +26,10 @@ public class UserController {
         this.userService = userService;
     }
 
+    @Operation(
+            summary = "Register a new user",
+            description = "Creates a new VELO user account."
+    )
     @PostMapping("/register")
     public ApiResponse<UserResponse> registerUser(
             @Valid @RequestBody RegisterUserRequest request) {
@@ -33,6 +42,11 @@ public class UserController {
                 response
         );
     }
+
+    @Operation(
+            summary = "Login user",
+            description = "Authenticates a user and returns a JWT token."
+    )
     @PostMapping("/login")
     public ApiResponse<LoginResponse> loginUser(
             @Valid @RequestBody LoginRequest request) {
@@ -45,6 +59,11 @@ public class UserController {
                 response
         );
     }
+
+    @Operation(
+            summary = "Get current user",
+            description = "Returns the authenticated user's profile."
+    )
     @GetMapping("/me")
     public ApiResponse<UserResponse> getCurrentUser(Authentication authentication) {
 

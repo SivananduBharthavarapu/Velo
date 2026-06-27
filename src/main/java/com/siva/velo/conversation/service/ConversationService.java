@@ -5,9 +5,10 @@ import com.siva.velo.conversation.dto.ConversationSummaryResponse;
 import com.siva.velo.conversation.dto.CreateConversationResponse;
 import com.siva.velo.conversation.entity.Conversation;
 import com.siva.velo.conversation.repository.ConversationRepository;
+import com.siva.velo.exception.SelfConversationNotAllowedException;
+import com.siva.velo.exception.UserNotFoundException;
 import com.siva.velo.user.entity.User;
 import com.siva.velo.user.repository.UserRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -36,14 +37,14 @@ public class ConversationService {
 
         User sender = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() ->
-                        new EntityNotFoundException("Sender not found"));
+                new UserNotFoundException("Sender not found"));
 
         User receiver = userRepository.findById(receiverId)
                 .orElseThrow(() ->
-                        new EntityNotFoundException("Receiver not found"));
+                        new UserNotFoundException("Receiver not found"));
 
         if (sender.getId().equals(receiver.getId())) {
-            throw new IllegalArgumentException(
+            throw new SelfConversationNotAllowedException(
                     "You cannot create a conversation with yourself.");
         }
 
@@ -74,7 +75,7 @@ public class ConversationService {
 
         User currentUser = userRepository.findByEmail(authentication.getName())
                 .orElseThrow(() ->
-                        new EntityNotFoundException("User not found"));
+                        new UserNotFoundException("User not found"));
 
         List<Conversation> conversations =
                 conversationRepository.findByUserOneOrUserTwo(
